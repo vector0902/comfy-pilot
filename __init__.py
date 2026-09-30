@@ -540,23 +540,11 @@ async def websocket_handler(request):
     print(f"[Claude Code] WebSocket connected: {session_id}")
     log_memory("ws connect")
 
-    # Get command from query params, or auto-detect
+    # Get command from query params, or default to a plain interactive shell.
+    # fork 修改：不再自动检测/安装 claude code；cmd 缺省/为空 → spawn(None) → 交互 shell。
     command = request.query.get("cmd", None)
-    if command is None:
-        command = get_claude_command()
-        print(f"[Claude Code] Auto-detected command: {command}")
-
-    # If claude is not found (command is just "claude" without path), try to install it
-    if command in ("claude", "claude -c"):
-        print("[Claude Code] Claude CLI not found, attempting auto-install...")
-        success, message = install_claude_code()
-        if success:
-            # Re-detect the command with the newly installed claude
-            command = get_claude_command()
-            print(f"[Claude Code] After install, command: {command}")
-        else:
-            print(f"[Claude Code] Auto-install failed: {message}")
-            # Continue anyway - user will see the error in the terminal
+    if command == "":
+        command = None
 
     # Try to set up MCP if not already configured (may have been skipped at load time
     # if claude wasn't installed yet)
